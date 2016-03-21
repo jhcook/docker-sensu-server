@@ -1,33 +1,30 @@
-FROM centos:centos6
+FROM centos:7
+ENV container=docker
 
-MAINTAINER Hiroaki Sano <hiroaki.sano.9stories@gmail.com>
+MAINTAINER Justin Cook <jhcook@gmail.com>
 
 # Basic packages
-RUN rpm -Uvh http://download.fedoraproject.org/pub/epel/6/i386/epel-release-6-8.noarch.rpm \
-  && yum -y install passwd sudo git wget openssl openssh openssh-server openssh-clients
-
-# Create user
-RUN useradd hiroakis \
- && echo "hiroakis" | passwd hiroakis --stdin \
- && sed -ri 's/UsePAM yes/#UsePAM yes/g' /etc/ssh/sshd_config \
- && sed -ri 's/#UsePAM no/UsePAM no/g' /etc/ssh/sshd_config \
- && echo "hiroakis ALL=(ALL) ALL" >> /etc/sudoers.d/hiroakis
+RUN rpm -Uvh https://www.mirrorservice.org/sites/dl.fedoraproject.org/pub/epel/7/x86_64/e/epel-release-7-5.noarch.rpm \
+  && yum -y install passwd sudo git wget openssl
 
 # Redis
 RUN yum install -y redis
 
 # RabbitMQ
 RUN yum install -y erlang \
-  && rpm --import http://www.rabbitmq.com/rabbitmq-signing-key-public.asc \
-  && rpm -Uvh http://www.rabbitmq.com/releases/rabbitmq-server/v3.1.4/rabbitmq-server-3.1.4-1.noarch.rpm \
-  && git clone git://github.com/joemiller/joemiller.me-intro-to-sensu.git \
-  && cd joemiller.me-intro-to-sensu/; ./ssl_certs.sh clean && ./ssl_certs.sh generate \
-  && mkdir /etc/rabbitmq/ssl \
-  && cp /joemiller.me-intro-to-sensu/server_cert.pem /etc/rabbitmq/ssl/cert.pem \
-  && cp /joemiller.me-intro-to-sensu/server_key.pem /etc/rabbitmq/ssl/key.pem \
-  && cp /joemiller.me-intro-to-sensu/testca/cacert.pem /etc/rabbitmq/ssl/
+  && curl -s https://packagecloud.io/install/repositories/rabbitmq/rabbitmq-server/script.rpm.sh | bash \
+  && yum install -y rabbitmq-server-3.6.1-1.noarch 
+
+# Generate keys
+RUN git clone https://github.com/joemiller/joemiller.me-intro-to-sensu.git \
+  && cd joemiller.me-intro-to-sensu ; ./ssl_certs.sh clean && ./ssl_certs.sh generate \
+  && mkdir -p /etc/rabbitmq/ssl \
+  && cp server_cert.pem /etc/rabbitmq/ssl/cert.pem \
+  && cp server_key.pem /etc/rabbitmq/ssl/key.pem \
+  && cp testca/cacert.pem /etc/rabbitmq/ssl/
 ADD ./files/rabbitmq.config /etc/rabbitmq/
-RUN rabbitmq-plugins enable rabbitmq_management
+RUN systemctl enable rabbitmq-server \
+  && rabbitmq-plugins enable rabbitmq_management --offline
 
 # Sensu server
 ADD ./files/sensu.repo /etc/yum.repos.d/
@@ -42,13 +39,11 @@ RUN yum install -y uchiwa
 ADD ./files/uchiwa.json /etc/sensu/
 
 # supervisord
-RUN wget http://peak.telecommunity.com/dist/ez_setup.py;python ez_setup.py \
+RUN wget http://peak.telecommunity.com/dist/ez_setup.py ; python ez_setup.py \
   && easy_install supervisor
-ADD files/supervisord.conf /etc/supervisord.conf
+ADD ./files/supervisord.conf /etc/supervisord.conf
 
-RUN /etc/init.d/sshd start && /etc/init.d/sshd stop
-
-EXPOSE 22 3000 4567 5671 15672
+EXPOSE 3000 4567 5671 15672
 
 CMD ["/usr/bin/supervisord"]
 
