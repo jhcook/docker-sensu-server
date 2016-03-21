@@ -8,7 +8,7 @@ RUN rpm -Uvh https://www.mirrorservice.org/sites/dl.fedoraproject.org/pub/epel/7
   && yum -y install passwd sudo git wget openssl
 
 # Redis
-RUN yum install -y redis
+RUN yum install -y redis && systemctl enable redis
 
 # RabbitMQ
 RUN yum install -y erlang \
