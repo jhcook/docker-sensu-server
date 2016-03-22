@@ -1,7 +1,7 @@
 # docker-sensu-server
 
 CentOS and Sensu.
-It runs redis, rabbitmq-server, uchiwa, sensu-api, sensu-server and ssh processes.
+It runs redis, rabbitmq-server, uchiwa, sensu-api and sensu-server.
 
 ## Installation
 
@@ -16,13 +16,13 @@ or
 ```
 git clone https://github.com/jhcook/docker-sensu-server.git
 cd docker-sensu-server
-docker build -t yourname/docker-sensu-server .
+docker build -t <yourname>/docker-sensu-server .
 ```
 
 ## Run
 
 ```
-docker run -d -p 10022:22 -p 3000:3000 -p 4567:4567 -p 5671:5671 -p 15672:15672 jhcook/docker-sensu-server
+docker run -d -p 3000:3000 -p 4567:4567 -p 5671:5671 -p 15672:15672 jhcook/docker-sensu-server
 ```
 
 ## How to access via browser and sensu-client
