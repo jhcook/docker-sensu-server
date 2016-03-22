@@ -1,4 +1,5 @@
 FROM centos:7
+VOLUME /sys/fs/cgroup /run /tmp
 ENV container=docker
 
 MAINTAINER Justin Cook <jhcook@gmail.com>
